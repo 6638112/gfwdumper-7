@@ -10,46 +10,48 @@ template = (b'\x01\x00\x00\x02\x00\x00\x00\x00\x00\x00', b'\x09google.co\xffuk',
 
 asciis=b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 names = [
-(b'google.co', b'\xffuk'),
-(b'bbc.co', b'\xffuk'),
-(b'google',)
+    (b'google.co', b'\xffuk'),
+    (b'bbc.co', b'\xffuk'),
+    (b'google',)
 ]
 
 def payload():
-random.shuffle(names)
-p = bytearray()
-n = names[0]
+    random.shuffle(names)
 
-p.extend(os.urandom(2))
-p.extend(template[0])
+    p = bytearray()
+    n = names[0]
 
-p.append(len(n[0]))
-p.extend(n[0])
+    p.extend(os.urandom(2))
+    p.extend(template[0])
 
-p.append(0xff)
-for _ in range(2):
-    p.append(asciis[os.urandom(1)[0] % 52])
+    p.append(len(n[0]))
+    p.extend(n[0])
 
-p.append(0x00)
-return p
+    p.append(0xff)
+    for _ in range(2):
+        p.append(asciis[os.urandom(1)[0] % 52])
+
+    p.append(0x00)
+    return p
 
 memory = []
 def sender():
-while True:
-ip = socket.inet_ntoa(os.urandom(4))
-try:
-sock.sendto(payload(), (ip, 53))
-except OSError:
-pass
+    while True:
+        ip = socket.inet_ntoa(os.urandom(4))
+        try:
+            sock.sendto(payload(), (ip, 53))
+        except OSError:
+            pass
 
 def receiver():
-db = sqlite3.connect('./gfwdump.sqlite3')
-db.execute("CREATE TABLE IF NOT EXISTS memory (BINARY NOT NULL, TEXT NOT NULL)")
-while True:
-msg, src = sock.recvfrom(65599)
-print(msg, src)
-db.execute("INSERT INTO memory VALUES (?, ?)", (msg, '%s#%s'%src ))
-db.commit()
+    db = sqlite3.connect('./gfwdump.sqlite3')
+    db.execute("CREATE TABLE IF NOT EXISTS memory (BINARY NOT NULL, TEXT NOT NULL)")
+    while True:
+        msg, src = sock.recvfrom(65599)
+        print(msg, src)
+        db.execute("INSERT INTO memory VALUES (?, ?)", (msg, '%s#%s'%src ))
+        db.commit()
+
 
 threading.Thread(target=sender, daemon=True).start()
 threading.Thread(target=receiver, daemon=True).start()
